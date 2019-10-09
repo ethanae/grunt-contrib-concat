@@ -1,43 +1,15 @@
 var ts = require('typescript');
 var fs = require('fs');
 
-module.exports.withTsConfig = withTsConfig;
-
-/**
- * 
- * @param {ts.CompilerOptions} tsConfig 
- * @returns a function to used to compile TS sources into desired targets
- * @throws
- */
-function withTsConfig (compilerOptions) {
-  if(!compilerOptions) {
-    throw new Error(`TypeScript config not provided`);
-  }
-  return (filepath) => {
-    if (!compilerOptions.noEmitOnError) {
-      console.log(`\x1b[33m Warning: Emitting TypeScript compiled result for ${filepath} despite errors\x1b[0m`);
-      return compileToTargetAlwaysEmit(filepath, ts, compilerOptions);
-    } else {
-      const program = ts.createProgram([filepath], compilerOptions);
-      const allDiagnostics = getAllDiagnostics(program);
-      if (allDiagnostics.length) {
-        logDiagnostics(ts, allDiagnostics);
-        throw new Error(`TypeScript compilation failed with ${allDiagnostics.length} errors`);
-      }
-      return compileToTarget(program);
-    }
-  }
-};
-
 /**
  * Gets all compiler diagnostics
  * @param {ts.Program} program 
  * @returns {Array<ts.Diagnostic>} Compiler diagnostics
  */
 function getAllDiagnostics(program) {
-  const semanticDiagnostics = program.getSemanticDiagnostics();
-  const syntacticDiagnostics = program.getSyntacticDiagnostics();
-  return [...semanticDiagnostics, ...syntacticDiagnostics];
+  var semanticDiagnostics = program.getSemanticDiagnostics();
+  var syntacticDiagnostics = program.getSyntacticDiagnostics();
+  return semanticDiagnostics.concat(syntacticDiagnostics);
 }
 
 /**
@@ -46,14 +18,14 @@ function getAllDiagnostics(program) {
  * @param {Array<ts.Diagnostic>} allDiagnostics 
  */
 function logDiagnostics(typescript, allDiagnostics) {
-  const nonEmptyDiagnostics = allDiagnostics.filter(diagnostic => diagnostic.length);
-  nonEmptyDiagnostics.map(diagnostic => {
-    const message = typescript.flattenDiagnosticMessageText(`${diagnostic.messageText} TS${diagnostic.code}`, "\n");
+  var nonEmptyDiagnostics = allDiagnostics.filter(function(diagnostic) { return diagnostic.length; });
+  nonEmptyDiagnostics.map(function (diagnostic) {
+    var message = typescript.flattenDiagnosticMessageText(diagnostic.messageText + ' TS' + diagnostic.code, "\n");
     if (diagnostic.file) {
-      const { line, character } = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
-      console.log(`\x1b[31m Error ${diagnostic.file.fileName} (${line + 1},${character + 1}): ${message}\x1b[0m`);
+      var lineAndChar = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
+      console.log('\x1b[31m Error ' + diagnostic.file.fileName + '(' + lineAndChar.line + 1 + ',' + lineAndChar.character + 1 + '):' + message + '\x1b[0m');
     } else {
-      console.log(`\x1b[31m Error: ${message}\x1b[0m`);
+      console.log('\x1b[31m Error: ' + message + '\x1b[0m');
     }
   });
 }
@@ -65,10 +37,10 @@ function logDiagnostics(typescript, allDiagnostics) {
  * @throws 
  */
 function compileToTarget(program) {
-  const result = program.emit();
+  var result = program.emit();
   if (result.emitSkipped) {
     logDiagnostics(result.diagnostics);
-    throw new Error(`TypeScript compilation failed with ${allDiagnostics.length} errors`);
+    throw new Error('TypeScript compilation failed with ' + result.diagnostics.length + ' errors');
   } else if(result.emittedFiles) {
     return result.emittedFiles[0];
   }
@@ -81,6 +53,32 @@ function compileToTarget(program) {
  * @param {ts.CompilerOptions} options 
  */
 function compileToTargetAlwaysEmit(filepath, typescript, options) {
-  const result = typescript.transpileModule(fs.readFileSync(filepath).toString(), options);
+  var result = typescript.transpileModule(fs.readFileSync(filepath).toString(), options);
   return result.outputText;
 }
+
+/**
+ * 
+ * @param {ts.CompilerOptions} tsConfig 
+ * @returns a function to used to compile TS sources into desired targets
+ * @throws
+ */
+module.exports = function withTsConfig (compilerOptions) {
+  if(!compilerOptions) {
+    throw new Error('TypeScript config not provided');
+  }
+  return function (filepath) {
+    if (!compilerOptions.noEmitOnError) {
+      console.log('\x1b[33m Warning: Emitting TypeScript compiled result for ' + filepath + ' despite errors\x1b[0m');
+      return compileToTargetAlwaysEmit(filepath, ts, compilerOptions);
+    } else {
+      var program = ts.createProgram([filepath], compilerOptions);
+      var allDiagnostics = getAllDiagnostics(program);
+      if (allDiagnostics.length) {
+        logDiagnostics(ts, allDiagnostics);
+        throw new Error('TypeScript compilation failed with ' + allDiagnostics.length + ' errors');
+      }
+      return compileToTarget(program);
+    }
+  };
+};
