@@ -87,7 +87,7 @@ module.exports = function(grunt) {
         if(options.typescript && options.typescript.compileTypeScript) {
           var withTsConfig = require('./lib/process-typescript');
           if(/\.ts$/.test(filepath)) {
-            if(!options.typescript.tsConfig && options.typescript.tsConfigFilePath) { throw new Error('Invalid TS config'); }
+            if(!options.typescript.tsConfig && !options.typescript.tsConfigFilePath) { throw new Error('Invalid TS config'); }
             var tsConfig = options.typescript.tsConfig ? options.typescript.tsConfig : grunt.file.read(options.typescript.tsConfigFilePath);
             src = withTsConfig(JSON.parse(tsConfig).compilerOptions)(filepath);
           }
