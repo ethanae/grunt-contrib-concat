@@ -1,3 +1,7 @@
+v1.0.2:
+  date: 2019-10-09
+  changes:
+    - Add tsc for transpiling source files before concatenating
 v1.0.1:
   date: 2016-04-20
   changes:
