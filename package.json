@@ -6,7 +6,7 @@
     "name": "Grunt Team",
     "url": "http://gruntjs.com/"
   },
-  "repository": "gruntjs/grunt-contrib-concat",
+  "repository": "ethanae/grunt-contrib-concat",
   "license": "MIT",
   "engines": {
     "node": ">=0.10.0"
