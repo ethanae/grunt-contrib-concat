@@ -31,28 +31,12 @@ function logDiagnostics(typescript, allDiagnostics) {
 }
 
 /**
- * 
- * @param {ts.Program} program 
- * @returns {string} the compiled output for the specified target
- * @throws 
- */
-function compileToTarget(program) {
-  var result = program.emit();
-  if (result.emitSkipped) {
-    logDiagnostics(result.diagnostics);
-    throw new Error('TypeScript compilation failed with ' + result.diagnostics.length + ' errors');
-  } else if(result.emittedFiles) {
-    return result.emittedFiles[0];
-  }
-}
-
-/**
  * Always emits the output from the TS compilation
  * @param {string} filepath 
  * @param {ts} typescript 
  * @param {ts.CompilerOptions} options 
  */
-function compileToTargetAlwaysEmit(filepath, typescript, options) {
+function compileToTarget(typescript, filepath, options) {
   var result = typescript.transpileModule(fs.readFileSync(filepath).toString(), options);
   return result.outputText;
 }
@@ -70,7 +54,7 @@ module.exports = function withTsConfig (compilerOptions) {
   return function (filepath) {
     if (!compilerOptions.noEmitOnError) {
       console.log('\x1b[33m Warning: Emitting TypeScript compiled result for ' + filepath + ' despite errors\x1b[0m');
-      return compileToTargetAlwaysEmit(filepath, ts, compilerOptions);
+      return compileToTarget(ts, filepath, compilerOptions);
     } else {
       var program = ts.createProgram([filepath], compilerOptions);
       var allDiagnostics = getAllDiagnostics(program);
@@ -78,7 +62,7 @@ module.exports = function withTsConfig (compilerOptions) {
         logDiagnostics(ts, allDiagnostics);
         throw new Error('TypeScript compilation failed with ' + allDiagnostics.length + ' errors');
       }
-      return compileToTarget(program);
+      return compileToTarget(ts, filepath, compilerOptions);
     }
   };
 };
